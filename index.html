@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NATO Phonetic Alphabet Translator</title>
+<meta name="description" content="Type any text and get the NATO phonetic spelling (Alfa, Bravo, Charlie...). Copy or speak it instantly." />
+<style>
+  :root {
+    --bg: #0b1020; --card:#12182a; --fg:#e9eefc; --muted:#96a0be; --brand:#5fd0ff; --accent:#9dff7a; --red:#ff7a7a;
+    --radius: 16px;
+    color-scheme: dark light;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#f6f8ff; --card:#ffffff; --fg:#0c132b; --muted:#4a5a87; --brand:#0067ff; --accent:#0aa36a; }
+  }
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+  .wrap{max-width:940px;margin:32px auto;padding:0 16px}
+  .hero{display:flex;gap:20px;flex-wrap:wrap;align-items:stretch}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 30px rgba(0,0,0,.25);padding:18px;flex:1 1 360px;min-height:240px}
+  h1{margin:0 0 6px;font-size:clamp(22px,3.6vw,34px)}
+  p.sub{margin:0 0 16px;color:var(--muted)}
+  textarea, .out{width:100%;height:210px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:transparent;color:inherit;padding:12px;resize:vertical}
+  .out{white-space:pre-wrap;overflow:auto}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button, select, label.toggle{border:1px solid rgba(255,255,255,.12);background:transparent;color:inherit;padding:10px 12px;border-radius:12px;cursor:pointer}
+  button:hover{border-color:var(--brand)}
+  .primary{background:var(--brand);border-color:var(--brand);color:white}
+  .ghost{opacity:.9}
+  .chip{font:12px/1.2 mono;opacity:.8}
+  footer{margin-top:22px;color:var(--muted);font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:10px}
+  .kbd{font:12px/1 mono;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
+  .sr-only{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>NATO Phonetic Alphabet Translator</h1>
+  <p class="sub">Type anything. We’ll spell it with NATO / ICAO words. Copy or speak the result.</p>
+
+  <div class="hero">
+    <div class="card">
+      <label for="in" class="chip">Input</label>
+      <textarea id="in" placeholder="e.g. Booking code QF9, email: ops@ptc.net.au"></textarea>
+
+      <div class="bar">
+        <label class="toggle">
+          <input type="checkbox" id="digitsAsWords" /> Digits as words (0→Zero)
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="compactMode" /> Compact output (no slashes)
+        </label>
+        <label class="toggle">
+          Style:
+          <select id="style">
+            <option value="nato">NATO (Alfa, Bravo)</option>
+            <option value="north_atlantic">North Atlantic (older spellings)</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid" aria-hidden="true">
+        <span class="kbd">⌘/Ctrl+C</span><span class="kbd">⌘/Ctrl+V</span><span class="kbd">⌘/Ctrl+K (clear)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <label for="out" class="chip">Output</label>
+      <div id="out" class="out" role="status" aria-live="polite"></div>
+      <div class="bar">
+        <button id="copy" class="primary">Copy</button>
+        <button id="speak" class="ghost">Speak</button>
+        <button id="clear" class="ghost">Clear</button>
+        <span id="count" class="chip"></span>
+      </div>
+    </div>
+  </div>
+
+  <details class="card" style="margin-top:16px">
+    <summary>Reference (NATO / ICAO)</summary>
+    <div id="table" class="grid"></div>
+  </details>
+
+  <footer>
+    Built as a single static page. No data leaves your browser. —
+    <a href="https://en.wikipedia.org/wiki/NATO_phonetic_alphabet" target="_blank" rel="noopener">What is the NATO alphabet?</a>
+  </footer>
+</div>
+
+<script>
+  // Mappings
+  const MAPS = {
+    nato: {
+      A:"Alfa", B:"Bravo", C:"Charlie", D:"Delta", E:"Echo", F:"Foxtrot", G:"Golf", H:"Hotel",
+      I:"India", J:"Juliett", K:"Kilo", L:"Lima", M:"Mike", N:"November", O:"Oscar", P:"Papa",
+      Q:"Quebec", R:"Romeo", S:"Sierra", T:"Tango", U:"Uniform", V:"Victor", W:"Whiskey",
+      X:"X-ray", Y:"Yankee", Z:"Zulu"
+    },
+    north_atlantic: { // example alt spellings (kept same for simplicity; you can vary if needed)
+      A:"Alpha", B:"Bravo", C:"Charlie", D:"Delta", E:"Echo", F:"Foxtrot", G:"Golf", H:"Hotel",
+      I:"India", J:"Juliet", K:"Kilo", L:"Lima", M:"Mike", N:"November", O:"Oscar", P:"Papa",
+      Q:"Quebec", R:"Romeo", S:"Sierra", T:"Tango", U:"Uniform", V:"Victor", W:"Whisky",
+      X:"X-ray", Y:"Yankee", Z:"Zulu"
+    }
+  };
+  const DIGITS = { "0":"Zero","1":"One","2":"Two","3":"Three","4":"Four","5":"Five","6":"Six","7":"Seven","8":"Eight","9":"Nine" };
+
+  const elIn = document.getElementById('in');
+  const elOut = document.getElementById('out');
+  const elCopy = document.getElementById('copy');
+  const elSpeak = document.getElementById('speak');
+  const elClear = document.getElementById('clear');
+  const elCount = document.getElementById('count');
+  const elDigits = document.getElementById('digitsAsWords');
+  const elCompact = document.getElementById('compactMode');
+  const elStyle = document.getElementById('style');
+  const elTable = document.getElementById('table');
+
+  // build reference table
+  function renderTable() {
+    const map = MAPS[elStyle.value];
+    elTable.innerHTML = Object.entries(map).map(([k,v]) =>
+      `<div class="card" style="padding:10px"><strong>${k}</strong><div style="opacity:.8">${v}</div></div>`
+    ).join('');
+  }
+  renderTable();
+  elStyle.addEventListener('change', () => { render(); renderTable(); });
+
+  // translate
+  function translate(text) {
+    const map = MAPS[elStyle.value];
+    const compact = elCompact.checked;
+    const parts = [];
+    for (const ch of text) {
+      const up = ch.toUpperCase();
+      if (map[up]) {
+        parts.push(map[up]);
+      } else if (elDigits.checked && DIGITS[ch] !== undefined) {
+        parts.push(DIGITS[ch]);
+      } else if (/\s/.test(ch)) {
+        parts.push(compact ? " / " : "   "); // word separator
+      } else {
+        parts.push(ch); // pass punctuation/symbols through
+      }
+    }
+    // Collapse multiple spaces nicely
+    const joined = parts.join(' ').replace(/\s{3,}/g, '   ');
+    return joined.trim();
+  }
+
+  function render() {
+    const val = elIn.value;
+    const res = translate(val);
+    elOut.textContent = res || '—';
+    elCount.textContent = val.length ? `${val.length} chars` : '';
+  }
+  elIn.addEventListener('input', render);
+  elDigits.addEventListener('change', render);
+  elCompact.addEventListener('change', render);
+
+  // actions
+  elCopy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(elOut.textContent);
+      flash(elCopy, 'Copied!');
+    } catch {
+      flash(elCopy, 'Couldn’t copy', true);
+    }
+  });
+
+  elClear.addEventListener('click', () => { elIn.value=''; render(); elIn.focus(); });
+
+  // speech
+  function speakText(text) {
+    if (!('speechSynthesis' in window)) { alert('Speech not supported in this browser.'); return; }
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text.replace(/\s{2,}/g,' '));
+    u.rate = 0.95; u.pitch = 1.0;
+    // Try to prefer English voices (AU if available)
+    const voices = speechSynthesis.getVoices();
+    const pref = voices.find(v => /en-AU|en-GB|en-US/.test(v.lang)) || voices[0];
+    if (pref) u.voice = pref;
+    speechSynthesis.speak(u);
+  }
+  elSpeak.addEventListener('click', () => {
+    const text = elOut.textContent.replace(/ \/ /g, ' / '); // keep separators audible
+    if (text && text !== '—') speakText(text);
+  });
+
+  // ui nicety
+  function flash(btn, msg, error=false){
+    const old = btn.textContent;
+    btn.textContent = msg;
+    btn.style.background = error ? 'var(--red)' : 'var(--accent)';
+    btn.style.borderColor = btn.style.background; btn.style.color = '#000';
+    setTimeout(()=>{ btn.textContent = old; btn.removeAttribute('style'); }, 900);
+  }
+
+  // shortcuts
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); elClear.click(); }
+  });
+
+  // initial
+  elIn.value = 'QF9 / ops@ptc.net.au';
+  render();
+</script>
+</body>
+</html>
