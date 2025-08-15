@@ -2,208 +2,361 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NATO Phonetic Alphabet Translator</title>
-<meta name="description" content="Type any text and get the NATO phonetic spelling (Alfa, Bravo, Charlie...). Copy or speak it instantly." />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Spell & Convert — NATO + Morse</title>
+<meta name="description" content="Type anything and convert it to the NATO phonetic alphabet or Morse code. Copy, speak, or play beeps. Offline-friendly, no tracking." />
 <style>
-  :root {
-    --bg: #0b1020; --card:#12182a; --fg:#e9eefc; --muted:#96a0be; --brand:#5fd0ff; --accent:#9dff7a; --red:#ff7a7a;
-    --radius: 16px;
-    color-scheme: dark light;
+  :root{
+    --bg:#0b1020;--card:#12182a;--fg:#e9eefc;--muted:#9aa7cf;--brand:#5fd0ff;--accent:#9dff7a;--danger:#ff7a7a;--radius:16px
   }
-  @media (prefers-color-scheme: light) {
-    :root { --bg:#f6f8ff; --card:#ffffff; --fg:#0c132b; --muted:#4a5a87; --brand:#0067ff; --accent:#0aa36a; }
+  @media (prefers-color-scheme:light){
+    :root{--bg:#f6f8ff;--card:#ffffff;--fg:#0c132b;--muted:#4a5a87;--brand:#0067ff;--accent:#0aa36a}
   }
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
-  .wrap{max-width:940px;margin:32px auto;padding:0 16px}
-  .hero{display:flex;gap:20px;flex-wrap:wrap;align-items:stretch}
-  .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 30px rgba(0,0,0,.25);padding:18px;flex:1 1 360px;min-height:240px}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
+  .wrap{max-width:1000px;margin:28px auto;padding:0 16px}
   h1{margin:0 0 6px;font-size:clamp(22px,3.6vw,34px)}
-  p.sub{margin:0 0 16px;color:var(--muted)}
-  textarea, .out{width:100%;height:210px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:transparent;color:inherit;padding:12px;resize:vertical}
+  p.sub{margin:0;color:var(--muted)}
+  .row{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:0 6px 30px rgba(0,0,0,.25);padding:18px;flex:1 1 340px}
+  textarea,.out{width:100%;min-height:210px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:transparent;color:inherit;padding:12px;resize:vertical}
   .out{white-space:pre-wrap;overflow:auto}
-  .bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-  button, select, label.toggle{border:1px solid rgba(255,255,255,.12);background:transparent;color:inherit;padding:10px 12px;border-radius:12px;cursor:pointer}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  button,select,label.toggle{border:1px solid rgba(255,255,255,.12);background:transparent;color:inherit;padding:10px 12px;border-radius:12px;cursor:pointer}
   button:hover{border-color:var(--brand)}
-  .primary{background:var(--brand);border-color:var(--brand);color:white}
-  .ghost{opacity:.9}
+  .primary{background:var(--brand);border-color:var(--brand);color:#fff}
+  .ghost{opacity:.95}
   .chip{font:12px/1.2 mono;opacity:.8}
-  footer{margin-top:22px;color:var(--muted);font-size:14px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:10px}
+  .tabs{display:flex;gap:8px;margin-top:10px}
+  .tab{padding:10px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.12);cursor:pointer}
+  .tab[aria-selected="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+  .panel{display:none;margin-top:10px}
+  .panel[aria-hidden="false"]{display:block}
+  .refgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:10px}
   .kbd{font:12px/1 mono;background:rgba(255,255,255,.08);padding:2px 6px;border-radius:8px}
-  .sr-only{position:absolute;left:-9999px}
+  footer{margin:18px 0 10px;color:var(--muted);font-size:14px}
+  a{color:var(--brand);text-decoration:none}
+  a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>NATO Phonetic Alphabet Translator</h1>
-  <p class="sub">Type anything. We’ll spell it with NATO / ICAO words. Copy or speak the result.</p>
+  <h1>Spell & Convert</h1>
+  <p class="sub">Type once. Get <strong>NATO phonetic</strong> or <strong>Morse code</strong>. Copy, speak, or play beeps.</p>
 
-  <div class="hero">
-    <div class="card">
+  <div class="row">
+    <!-- Input -->
+    <div class="card" style="flex:1 1 100%">
       <label for="in" class="chip">Input</label>
       <textarea id="in" placeholder="e.g. Booking code QF9, email: ops@ptc.net.au"></textarea>
-
       <div class="bar">
-        <label class="toggle">
-          <input type="checkbox" id="digitsAsWords" /> Digits as words (0→Zero)
-        </label>
-        <label class="toggle">
-          <input type="checkbox" id="compactMode" /> Compact output (no slashes)
-        </label>
-        <label class="toggle">
-          Style:
-          <select id="style">
-            <option value="nato">NATO (Alfa, Bravo)</option>
-            <option value="north_atlantic">North Atlantic (older spellings)</option>
-          </select>
-        </label>
-      </div>
-      <div class="grid" aria-hidden="true">
-        <span class="kbd">⌘/Ctrl+C</span><span class="kbd">⌘/Ctrl+V</span><span class="kbd">⌘/Ctrl+K (clear)</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <label for="out" class="chip">Output</label>
-      <div id="out" class="out" role="status" aria-live="polite"></div>
-      <div class="bar">
-        <button id="copy" class="primary">Copy</button>
-        <button id="speak" class="ghost">Speak</button>
-        <button id="clear" class="ghost">Clear</button>
-        <span id="count" class="chip"></span>
+        <span class="chip">Shortcuts: <span class="kbd">⌘/Ctrl+K</span> clear • <span class="kbd">⌘/Ctrl+C</span> copy output</span>
       </div>
     </div>
   </div>
 
-  <details class="card" style="margin-top:16px">
-    <summary>Reference (NATO / ICAO)</summary>
-    <div id="table" class="grid"></div>
-  </details>
+  <!-- Tabs -->
+  <div class="tabs" role="tablist" aria-label="Converters">
+    <button class="tab" role="tab" id="tab-nato" aria-controls="panel-nato" aria-selected="true">NATO</button>
+    <button class="tab" role="tab" id="tab-morse" aria-controls="panel-morse" aria-selected="false">Morse</button>
+  </div>
+
+  <!-- NATO Panel -->
+  <section id="panel-nato" class="panel" role="tabpanel" aria-labelledby="tab-nato" aria-hidden="false">
+    <div class="row">
+      <div class="card">
+        <label class="chip">Options</label>
+        <div class="bar">
+          <label class="toggle"><input type="checkbox" id="natoDigits"> Digits as words (0→Zero)</label>
+          <label class="toggle"><input type="checkbox" id="natoCompact"> Compact output</label>
+          <label class="toggle">
+            Style:
+            <select id="natoStyle">
+              <option value="nato">NATO (Alfa, Juliett, Whiskey)</option>
+              <option value="alt">Alt spellings (Alpha, Juliet, Whisky)</option>
+            </select>
+          </label>
+          <label class="toggle">
+            Voice:
+            <select id="voiceSelect"><option>Loading voices…</option></select>
+          </label>
+        </div>
+      </div>
+      <div class="card">
+        <label class="chip">Output</label>
+        <div id="natoOut" class="out" role="status" aria-live="polite">—</div>
+        <div class="bar">
+          <button id="natoCopy" class="primary">Copy</button>
+          <button id="natoSpeak" class="ghost">Speak</button>
+          <button id="clear" class="ghost">Clear</button>
+          <span id="natoCount" class="chip"></span>
+        </div>
+      </div>
+    </div>
+    <details class="card"><summary>Reference (A → Z)</summary><div id="natoTable" class="refgrid"></div></details>
+  </section>
+
+  <!-- Morse Panel -->
+  <section id="panel-morse" class="panel" role="tabpanel" aria-labelledby="tab-morse" aria-hidden="true">
+    <div class="row">
+      <div class="card">
+        <label class="chip">Options</label>
+        <div class="bar">
+          <label class="toggle"><input type="checkbox" id="morseSlashes" checked> Show word separators ( / )</label>
+          <label class="toggle"><input type="checkbox" id="morseSpaceBetween" checked> Space between letters</label>
+          <label class="toggle">WPM:
+            <select id="morseWpm">
+              <option>15</option><option selected>20</option><option>25</option><option>30</option>
+            </select>
+          </label>
+          <label class="toggle">Tone (Hz):
+            <select id="morseHz">
+              <option>500</option><option selected>650</option><option>800</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="card">
+        <label class="chip">Output</label>
+        <div id="morseOut" class="out" role="status" aria-live="polite">—</div>
+        <div class="bar">
+          <button id="morseCopy" class="primary">Copy</button>
+          <button id="morsePlay" class="ghost">Play Beeps</button>
+          <button id="morseStop" class="ghost">Stop</button>
+          <span id="morseCount" class="chip"></span>
+        </div>
+      </div>
+    </div>
+    <details class="card"><summary>Morse Reference</summary><div id="morseTable" class="refgrid"></div></details>
+  </section>
 
   <footer>
-    Built as a single static page. No data leaves your browser. —
-    <a href="https://en.wikipedia.org/wiki/NATO_phonetic_alphabet" target="_blank" rel="noopener">What is the NATO alphabet?</a>
+    No data leaves your browser. • Built for clarity and speed. •
+    <a href="https://github.com/sastu00/spell-it-nato" target="_blank" rel="noopener">Source</a>
   </footer>
 </div>
 
 <script>
-  // Mappings
-  const MAPS = {
-    nato: {
-      A:"Alfa", B:"Bravo", C:"Charlie", D:"Delta", E:"Echo", F:"Foxtrot", G:"Golf", H:"Hotel",
-      I:"India", J:"Juliett", K:"Kilo", L:"Lima", M:"Mike", N:"November", O:"Oscar", P:"Papa",
-      Q:"Quebec", R:"Romeo", S:"Sierra", T:"Tango", U:"Uniform", V:"Victor", W:"Whiskey",
-      X:"X-ray", Y:"Yankee", Z:"Zulu"
-    },
-    north_atlantic: { // example alt spellings (kept same for simplicity; you can vary if needed)
-      A:"Alpha", B:"Bravo", C:"Charlie", D:"Delta", E:"Echo", F:"Foxtrot", G:"Golf", H:"Hotel",
-      I:"India", J:"Juliet", K:"Kilo", L:"Lima", M:"Mike", N:"November", O:"Oscar", P:"Papa",
-      Q:"Quebec", R:"Romeo", S:"Sierra", T:"Tango", U:"Uniform", V:"Victor", W:"Whisky",
-      X:"X-ray", Y:"Yankee", Z:"Zulu"
-    }
+  // ---------- MAPPINGS ----------
+  const NATO_MAIN = {A:"Alfa",B:"Bravo",C:"Charlie",D:"Delta",E:"Echo",F:"Foxtrot",G:"Golf",H:"Hotel",I:"India",J:"Juliett",K:"Kilo",L:"Lima",M:"Mike",N:"November",O:"Oscar",P:"Papa",Q:"Quebec",R:"Romeo",S:"Sierra",T:"Tango",U:"Uniform",V:"Victor",W:"Whiskey",X:"X-ray",Y:"Yankee",Z:"Zulu"};
+  const NATO_ALT  = {A:"Alpha",B:"Bravo",C:"Charlie",D:"Delta",E:"Echo",F:"Foxtrot",G:"Golf",H:"Hotel",I:"India",J:"Juliet",K:"Kilo",L:"Lima",M:"Mike",N:"November",O:"Oscar",P:"Papa",Q:"Quebec",R:"Romeo",S:"Sierra",T:"Tango",U:"Uniform",V:"Victor",W:"Whisky",X:"X-ray",Y:"Yankee",Z:"Zulu"};
+  const DIGITS = {"0":"Zero","1":"One","2":"Two","3":"Three","4":"Four","5":"Five","6":"Six","7":"Seven","8":"Eight","9":"Nine"};
+  const MORSE = {
+    A:".-",B:"-...",C:"-.-.",D:"-..",E:".",F:"..-.",G:"--.",H:"....",I:"..",J:".---",K:"-.-",L:".-..",M:"--",
+    N:"-.",O:"---",P:".--.",Q:"--.-",R:".-.",S:"...",T:"-",U:"..-",V:"...-",W:".--",X:"-..-",Y:"-.--",Z:"--..",
+    "0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....","6":"-....","7":"--...","8":"---..","9":"----.",
+    ".":".-.-.-",",":"--..--","?":"..--..","'":".----.","!":"-.-.--","/":"-..-.","(":"-.--.",")":"-.--.-","&":".-...",
+    ":":"---...",";":"-.-.-.","=":"-...-","+":".-.-.","-":"-....-","_":"..--.-","\"":".-..-.","$":"...-..-","@":".--.-."
   };
-  const DIGITS = { "0":"Zero","1":"One","2":"Two","3":"Three","4":"Four","5":"Five","6":"Six","7":"Seven","8":"Eight","9":"Nine" };
 
+  // ---------- ELEMENTS ----------
   const elIn = document.getElementById('in');
-  const elOut = document.getElementById('out');
-  const elCopy = document.getElementById('copy');
-  const elSpeak = document.getElementById('speak');
-  const elClear = document.getElementById('clear');
-  const elCount = document.getElementById('count');
-  const elDigits = document.getElementById('digitsAsWords');
-  const elCompact = document.getElementById('compactMode');
-  const elStyle = document.getElementById('style');
-  const elTable = document.getElementById('table');
+  const tabs = Array.from(document.querySelectorAll('.tab'));
+  const panels = {
+    nato: document.getElementById('panel-nato'),
+    morse: document.getElementById('panel-morse')
+  };
+  // NATO
+  const elNatoDigits = document.getElementById('natoDigits');
+  const elNatoCompact = document.getElementById('natoCompact');
+  const elNatoStyle = document.getElementById('natoStyle');
+  const elNatoOut = document.getElementById('natoOut');
+  const elNatoCopy = document.getElementById('natoCopy');
+  const elNatoSpeak = document.getElementById('natoSpeak');
+  const elNatoCount = document.getElementById('natoCount');
+  const elVoice = document.getElementById('voiceSelect');
+  const elNatoTable = document.getElementById('natoTable');
+  // Morse
+  const elMorseOut = document.getElementById('morseOut');
+  const elMorseCopy = document.getElementById('morseCopy');
+  const elMorsePlay = document.getElementById('morsePlay');
+  const elMorseStop = document.getElementById('morseStop');
+  const elMorseCount = document.getElementById('morseCount');
+  const elMorseSlashes = document.getElementById('morseSlashes');
+  const elMorseSpaceBetween = document.getElementById('morseSpaceBetween');
+  const elMorseWpm = document.getElementById('morseWpm');
+  const elMorseHz = document.getElementById('morseHz');
+  const elMorseTable = document.getElementById('morseTable');
 
-  // build reference table
-  function renderTable() {
-    const map = MAPS[elStyle.value];
-    elTable.innerHTML = Object.entries(map).map(([k,v]) =>
-      `<div class="card" style="padding:10px"><strong>${k}</strong><div style="opacity:.8">${v}</div></div>`
+  // ---------- TABS ----------
+  function activateTab(targetId){
+    tabs.forEach(t=>{
+      const selected = t.id === `tab-${targetId}`;
+      t.setAttribute('aria-selected', selected);
+    });
+    Object.entries(panels).forEach(([k,sec])=>{
+      sec.setAttribute('aria-hidden', k!==targetId);
+    });
+    renderAll();
+  }
+  tabs.forEach(t=>t.addEventListener('click', ()=>activateTab(t.id.replace('tab-',''))));
+
+  // ---------- NATO RENDER ----------
+  function renderNatoTable(){
+    const map = elNatoStyle.value === 'nato' ? NATO_MAIN : NATO_ALT;
+    elNatoTable.innerHTML = Object.entries(map).map(([k,v]) =>
+      `<div class="card" style="padding:10px"><strong>${k}</strong><div style="opacity:.85">${v}</div></div>`
     ).join('');
   }
-  renderTable();
-  elStyle.addEventListener('change', () => { render(); renderTable(); });
-
-  // translate
-  function translate(text) {
-    const map = MAPS[elStyle.value];
-    const compact = elCompact.checked;
-    const parts = [];
-    for (const ch of text) {
+  function toNato(text){
+    const map = elNatoStyle.value === 'nato' ? NATO_MAIN : NATO_ALT;
+    const compact = elNatoCompact.checked;
+    const out = [];
+    for (const ch of text){
       const up = ch.toUpperCase();
-      if (map[up]) {
-        parts.push(map[up]);
-      } else if (elDigits.checked && DIGITS[ch] !== undefined) {
-        parts.push(DIGITS[ch]);
-      } else if (/\s/.test(ch)) {
-        parts.push(compact ? " / " : "   "); // word separator
-      } else {
-        parts.push(ch); // pass punctuation/symbols through
-      }
+      if (map[up]) out.push(map[up]);
+      else if (elNatoDigits.checked && DIGITS[ch] !== undefined) out.push(DIGITS[ch]);
+      else if (/\s/.test(ch)) out.push(compact ? " / " : "   ");
+      else out.push(ch);
     }
-    // Collapse multiple spaces nicely
-    const joined = parts.join(' ').replace(/\s{3,}/g, '   ');
-    return joined.trim();
+    return out.join(' ').replace(/\s{3,}/g,'   ').trim();
+  }
+  function renderNato(){
+    const val = elIn.value || "";
+    const res = toNato(val);
+    elNatoOut.textContent = res || '—';
+    elNatoCount.textContent = val.length ? `${val.length} chars` : '';
   }
 
-  function render() {
-    const val = elIn.value;
-    const res = translate(val);
-    elOut.textContent = res || '—';
-    elCount.textContent = val.length ? `${val.length} chars` : '';
+  // ---------- MORSE RENDER ----------
+  function renderMorseTable(){
+    elMorseTable.innerHTML = Object.entries(MORSE).filter(([k])=>/^[A-Z0-9]$/.test(k)).map(([k,v]) =>
+      `<div class="card" style="padding:10px"><strong>${k}</strong><div style="opacity:.85">${v}</div></div>`
+    ).join('');
   }
-  elIn.addEventListener('input', render);
-  elDigits.addEventListener('change', render);
-  elCompact.addEventListener('change', render);
+  function toMorse(text){
+    const showSlash = elMorseSlashes.checked;
+    const spaceBetween = elMorseSpaceBetween.checked;
+    const words = text.trim().split(/\s+/);
+    const convWords = words.map(w=>{
+      const letters = [...w].map(ch=>{
+        const up = ch.toUpperCase();
+        return MORSE[up] || MORSE[ch] || ''; // unknown chars → skip
+      }).filter(Boolean);
+      return letters.join(spaceBetween ? ' ' : '');
+    });
+    return convWords.join(showSlash ? ' / ' : '   ').trim() || '—';
+  }
+  function renderMorse(){
+    const val = elIn.value || "";
+    const res = toMorse(val);
+    elMorseOut.textContent = res;
+    elMorseCount.textContent = val.length ? `${val.length} chars` : '';
+  }
 
-  // actions
-  elCopy.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(elOut.textContent);
-      flash(elCopy, 'Copied!');
-    } catch {
-      flash(elCopy, 'Couldn’t copy', true);
-    }
-  });
+  function renderAll(){ renderNato(); renderMorse(); }
 
-  elClear.addEventListener('click', () => { elIn.value=''; render(); elIn.focus(); });
+  // ---------- COPY / CLEAR ----------
+  function copyText(el){
+    const text = el.textContent.trim();
+    if (!text || text === '—') return;
+    navigator.clipboard.writeText(text).catch(()=>{});
+  }
+  elNatoCopy.addEventListener('click', ()=>copyText(elNatoOut));
+  elMorseCopy.addEventListener('click', ()=>copyText(elMorseOut));
+  document.getElementById('clear').addEventListener('click', ()=>{ elIn.value=''; renderAll(); elIn.focus(); });
 
-  // speech
-  function speakText(text) {
-    if (!('speechSynthesis' in window)) { alert('Speech not supported in this browser.'); return; }
-    window.speechSynthesis.cancel();
+  // ---------- VOICES / SPEECH ----------
+  let voices = [];
+  function loadVoices(){
+    voices = speechSynthesis.getVoices();
+    const en = voices.filter(v=>/^en(-|_|$)/i.test(v.lang));
+    elVoice.innerHTML = (en.length?en:voices).map((v,i)=>`<option value="${v.name}">${v.name} (${v.lang})</option>`).join('') || '<option>No voices found</option>';
+  }
+  if ('speechSynthesis' in window){
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  } else {
+    elVoice.innerHTML = '<option>Speech not supported</option>';
+  }
+
+  function speak(text){
+    if (!('speechSynthesis' in window)) return alert('Speech not supported in this browser.');
     const u = new SpeechSynthesisUtterance(text.replace(/\s{2,}/g,' '));
-    u.rate = 0.95; u.pitch = 1.0;
-    // Try to prefer English voices (AU if available)
-    const voices = speechSynthesis.getVoices();
-    const pref = voices.find(v => /en-AU|en-GB|en-US/.test(v.lang)) || voices[0];
-    if (pref) u.voice = pref;
+    const name = elVoice.value;
+    const v = speechSynthesis.getVoices().find(v=>v.name===name) || speechSynthesis.getVoices()[0];
+    if (v) u.voice = v;
+    u.rate = 0.95; u.pitch = 1;
+    speechSynthesis.cancel();
     speechSynthesis.speak(u);
   }
-  elSpeak.addEventListener('click', () => {
-    const text = elOut.textContent.replace(/ \/ /g, ' / '); // keep separators audible
-    if (text && text !== '—') speakText(text);
-  });
+  elNatoSpeak.addEventListener('click', ()=>{ const t = elNatoOut.textContent; if(t && t!=='—') speak(t); });
 
-  // ui nicety
-  function flash(btn, msg, error=false){
-    const old = btn.textContent;
-    btn.textContent = msg;
-    btn.style.background = error ? 'var(--red)' : 'var(--accent)';
-    btn.style.borderColor = btn.style.background; btn.style.color = '#000';
-    setTimeout(()=>{ btn.textContent = old; btn.removeAttribute('style'); }, 900);
+  // ---------- MORSE AUDIO ----------
+  let ac, osc, playing = false, stopReq = false;
+  function unitMs(wpm){
+    // Standard PARIS timing: 1 dit = 1200ms / WPM
+    return 1200 / wpm;
   }
+  async function playMorse(morse){
+    if (playing) return;
+    const wpm = parseInt(elMorseWpm.value,10)||20;
+    const hz = parseInt(elMorseHz.value,10)||650;
+    const dit = unitMs(wpm);     // dit length
+    const dah = dit * 3;
+    const gapIntra = dit;        // between dits/dahs inside a letter
+    const gapInter = dit * 3;    // between letters
+    const gapWord = dit * 7;     // between words
 
-  // shortcuts
-  document.addEventListener('keydown', e => {
-    if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); elClear.click(); }
+    ac = ac || new (window.AudioContext||window.webkitAudioContext)();
+    osc = ac.createOscillator(); const gain = ac.createGain();
+    osc.type = 'sine'; osc.frequency.value = hz; gain.gain.value = 0;
+    osc.connect(gain).connect(ac.destination); osc.start();
+
+    function tone(ms){ return new Promise(res=>{ gain.gain.setTargetAtTime(0.2, ac.currentTime, 0.005); setTimeout(()=>{ gain.gain.setTargetAtTime(0, ac.currentTime, 0.005); setTimeout(res, gapIntra); }, ms); }); }
+    function rest(ms){ return new Promise(res=> setTimeout(res, ms)); }
+
+    playing = true; stopReq = false;
+    const words = morse.split(' / ');
+    for (let w=0; w<words.length && !stopReq; w++){
+      const letters = words[w].split(elMorseSpaceBetween.checked ? ' ' : '');
+      for (let li=0; li<letters.length && !stopReq; li++){
+        const symbol = letters[li];
+        for (let i=0;i<symbol.length && !stopReq;i++){
+          const s = symbol[i];
+          if (s === '.') await tone(dit);
+          else if (s === '-') await tone(dah);
+        }
+        if (li < letters.length-1) await rest(gapInter);
+      }
+      if (w < words.length-1) await rest(gapWord);
+    }
+    gain.gain.value = 0; osc.stop(); osc.disconnect(); playing=false;
+  }
+  elMorsePlay.addEventListener('click', ()=>{
+    const m = elMorseOut.textContent.trim();
+    if (m && m!=='—') playMorse(m);
+  });
+  elMorseStop.addEventListener('click', ()=>{
+    stopReq = true;
+    if (osc){ try{ osc.stop(); }catch{} }
+    playing=false;
   });
 
-  // initial
-  elIn.value = 'QF9 / ops@ptc.net.au';
-  render();
+  // ---------- EVENTS ----------
+  ['input','change'].forEach(ev=>{
+    elIn.addEventListener(ev, renderAll);
+    elNatoDigits.addEventListener(ev, renderNato);
+    elNatoCompact.addEventListener(ev, renderNato);
+    elNatoStyle.addEventListener(ev, ()=>{ renderNato(); renderNatoTable(); });
+    elMorseSlashes.addEventListener(ev, renderMorse);
+    elMorseSpaceBetween.addEventListener(ev, renderMorse);
+    elMorseWpm.addEventListener(ev, ()=>{}); // timing updates on play
+    elMorseHz.addEventListener(ev, ()=>{});
+  });
+
+  document.addEventListener('keydown', e=>{
+    if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); elIn.value=''; renderAll(); }
+  });
+
+  // ---------- INIT ----------
+  function init(){
+    renderNatoTable();
+    renderMorseTable();
+    elIn.value = 'QF9 / ops@ptc.net.au';
+    renderAll();
+  }
+  init();
 </script>
 </body>
 </html>
